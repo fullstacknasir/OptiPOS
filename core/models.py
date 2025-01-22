@@ -82,3 +82,14 @@ class Adjustment(models.Model):
 
     def __str__(self):
         return self.product.name
+
+
+class Transfer(models.Model):
+    from_store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='transfer_from')
+    to_store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='transfer_to')
+    quantity = models.PositiveIntegerField()
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='transfer_product')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.from_store.name
