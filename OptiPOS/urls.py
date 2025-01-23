@@ -39,6 +39,9 @@ urlpatterns = [
     path('v1/api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('v1/api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('v1/api/auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path('v1/api/auth/', include('user.urls', namespace='user')),
     path('v1/api/', include('core.urls', namespace='core')),
+    path('v1/api/', include('sales.urls', namespace='sales')),
+    path('v1/api/', include('purchase.urls', namespace='purchase')),
     path('docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 ]

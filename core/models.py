@@ -1,5 +1,7 @@
-from django.contrib.auth.models import User
+
 from django.db import models
+
+from user.models import User
 
 
 # Create your models here.
@@ -8,7 +10,7 @@ class Store(models.Model):
     location = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    creator = models.ForeignKey(User, on_delete=models.CASCADE)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='store_creator')
 
     def __str__(self):
         return self.name

@@ -1,0 +1,72 @@
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.shortcuts import render
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from rest_framework import viewsets, mixins, status
+from rest_framework.exceptions import NotFound
+from rest_framework.response import Response
+
+from user.models import User
+from user.serializer import CreateUserSerializer, CreatePasswordSerializer
+
+
+# Create your views here.
+class CreateUserAPIView(viewsets.GenericViewSet,
+                        mixins.CreateModelMixin, ):
+    serializer_class = CreateUserSerializer
+    queryset = User.objects.all()
+    authentication_classes = []
+    permission_classes = []
+
+    def create(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        user = User.objects.get(username=serializer.validated_data['username'])
+        token_generator = PasswordResetTokenGenerator()
+        token = token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        link = f"http://127.0.0.1:8000/set-password/{uid}/{token}/"
+        return Response({'link': link}, status=status.HTTP_201_CREATED)
+
+
+class SetPasswordAPIView(viewsets.GenericViewSet,
+                         mixins.ListModelMixin,
+                         mixins.CreateModelMixin):
+    serializer_class = CreatePasswordSerializer
+    queryset = User.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        try:
+            # Decode the user ID
+            uid = urlsafe_base64_decode(self.kwargs['uid']).decode()
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response({'error': 'Invalid link'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Validate the token
+        token_generator = PasswordResetTokenGenerator()
+        if not token_generator.check_token(user, self.kwargs['token']):
+            return Response({'error': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({})
+
+    def create(self, request, *args, **kwargs):
+        try:
+            # Decode the user ID
+            uid = urlsafe_base64_decode(self.kwargs['uid']).decode()
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response({'error': 'Invalid link'}, status=status.HTTP_400_BAD_REQUEST)
+
+        token_generator = PasswordResetTokenGenerator()
+        if not token_generator.check_token(user, self.kwargs['token']):
+            return Response({'error': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if serializer.validated_data['password'] != serializer.validated_data['password2']:
+            return Response({'error': 'Passwords do not match'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(serializer.validated_data['password'])
+        user.save()
+        return Response({'detail': 'Password saved successfully'}, status=status.HTTP_200_OK)
