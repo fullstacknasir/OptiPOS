@@ -1,3 +1,4 @@
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.viewsets import ModelViewSet
 
 from core.models import Store, Category, Brand, Product, Inventory, Adjustment
@@ -19,6 +20,7 @@ class CategoryAPIView(ModelViewSet):
 class BrandAPIView(ModelViewSet):
     queryset = Brand.objects.all()
     serializer_class = BrandSerializer
+    parser_classes = (MultiPartParser, FormParser)
 
 
 class ProductAPIView(ModelViewSet):
