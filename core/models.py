@@ -47,6 +47,7 @@ class Product(models.Model):
     unit_cost = models.DecimalField(max_digits=10, decimal_places=2)
     tax_method = models.CharField(max_length=100, choices=(('inclusive', 'inclusive'), ('exclusive', 'exclusive')))
     tax_rate = models.DecimalField(max_digits=10, decimal_places=2)
+    image = models.ImageField(upload_to='images/product/', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
