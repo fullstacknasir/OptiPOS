@@ -1,0 +1,6 @@
+**/migrations
+images
+media
+.idea
+db.sqlite3
+naming.txt
