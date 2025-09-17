@@ -64,3 +64,25 @@ class Transaction(models.Model):
         ('Cash', 'Cash'), ('bKash', 'bKash'), ('Nagad', 'Nagad'), ('Card', 'Card')), default='Cash')
     transaction_id = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.transaction_id
+
+
+class Shipment(models.Model):
+    sales_order = models.ForeignKey(Sales, on_delete=models.PROTECT, related_name="shipments")
+    store = models.ForeignKey(Store, on_delete=models.PROTECT)
+    shipped_at = models.DateTimeField(default=timezone.now)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+
+    def __str__(self):
+        return self.sales_order.sales_type
+
+
+class ShipmentLine(models.Model):
+    shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE, related_name="lines")
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    quantity = models.DecimalField(max_digits=18, decimal_places=6)
+
+    def __str__(self):
+        return str(self.id)

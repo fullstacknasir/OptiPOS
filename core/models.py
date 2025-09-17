@@ -15,6 +15,13 @@ class Store(models.Model):
     def __str__(self):
         return self.name
 
+class StoreUser(models.Model):
+    store = models.ForeignKey(Store, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    is_manager = models.BooleanField(default=False)
+    class Meta:
+        unique_together = (("store","user"),)
+
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -48,6 +55,7 @@ class Product(models.Model):
     tax_method = models.CharField(max_length=100, choices=(('inclusive', 'inclusive'), ('exclusive', 'exclusive')))
     tax_rate = models.DecimalField(max_digits=10, decimal_places=2)
     image = models.ImageField(upload_to='images/product/', blank=True)
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -92,7 +100,16 @@ class Transfer(models.Model):
     to_store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='transfer_to')
     quantity = models.PositiveIntegerField()
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='transfer_product')
+    type = models.CharField(max_length=16, choices=MovementType.choices)
+    ref_type = models.CharField(max_length=24)  # "PO","RCPT","SO","SHIP","ADJ","XFER","COUNT"
+    ref_id = models.UUIDField()  # links to header doc
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    note = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["product", "created_at"])]
 
     def __str__(self):
         return self.from_store.name
+
