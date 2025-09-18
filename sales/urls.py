@@ -1,6 +1,5 @@
 from rest_framework import routers
 
-from core.views import StoreAPIView, CategoryAPIView, BrandAPIView, ProductAPIView, InventoryAPIView, AdjustmentAPIView
 from sales.views import CustomerAPIView, SalesAPIView, SalesItemAPIView, TransactionAPIView
 
 app_name = 'sales'

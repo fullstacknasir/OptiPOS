@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from purchase.models import Supplier, PurchaseOrder, PurchasedItem
+from purchase.models import Supplier, PurchaseOrder, PurchaseOrderLine
 
 
 class SupplierSerializer(serializers.ModelSerializer):
@@ -18,6 +18,6 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
 class PurchasedItemSerializer(serializers.ModelSerializer):
     class Meta:
-        model = PurchasedItem
+        model = PurchaseOrderLine
         fields = '__all__'
         read_only_fields = ('id',)

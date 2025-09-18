@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from sales.models import Customer, Sales, SalesItem, Transaction
+from sales.models import Customer, Sales, SalesLine, Payment
 
 
 class CustomerSerializer(serializers.ModelSerializer):
@@ -18,13 +18,13 @@ class SalesSerializer(serializers.ModelSerializer):
 
 class SalesItemSerializer(serializers.ModelSerializer):
     class Meta:
-        model = SalesItem
+        model = SalesLine
         fields = '__all__'
         read_only_fields = ('id',)
 
 
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Transaction
+        model = Payment
         fields = '__all__'
         read_only_fields = ('id',)

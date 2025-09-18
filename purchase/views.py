@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework.viewsets import ModelViewSet
 
-from purchase.models import Supplier, PurchaseOrder, PurchasedItem
+from purchase.models import Supplier, PurchaseOrder
 from purchase.serializer import SupplierSerializer, PurchaseOrderSerializer, PurchasedItemSerializer
 
 
@@ -16,7 +16,3 @@ class PurchaseOrderAPIView(ModelViewSet):
     queryset = PurchaseOrder.objects.all()
     serializer_class = PurchaseOrderSerializer
 
-
-class PurchasedItemAPIView(ModelViewSet):
-    queryset = PurchasedItem.objects.all()
-    serializer_class = PurchasedItemSerializer

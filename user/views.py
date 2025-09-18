@@ -1,9 +1,8 @@
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.shortcuts import render
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from rest_framework import viewsets, mixins, status
-from rest_framework.exceptions import NotFound
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from user.models import User
@@ -12,13 +11,24 @@ from user.serializer import CreateUserSerializer, CreatePasswordSerializer
 
 # Create your views here.
 class CreateUserAPIView(viewsets.GenericViewSet,
+                        mixins.ListModelMixin,
                         mixins.CreateModelMixin, ):
     serializer_class = CreateUserSerializer
     queryset = User.objects.all()
-    authentication_classes = []
-    permission_classes = []
 
-    def create(self, request):
+    def get_permissions(self):
+        print(self.action)
+        if self.action == 'list':
+            return [IsAuthenticated()]
+        return []
+
+    def list(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            serializer = self.get_serializer(request.user)
+            return Response(serializer.data)
+        return Response({}, status=status.HTTP_401_UNAUTHORIZED)
+
+    def create(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -26,7 +36,9 @@ class CreateUserAPIView(viewsets.GenericViewSet,
         token_generator = PasswordResetTokenGenerator()
         token = token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
-        link = f"http://127.0.0.1:8000/set-password/{uid}/{token}/"
+        protocol = 'https' if request.is_secure() else 'http'
+        host = request.get_host()
+        link = f"{protocol}://{host}/v1/api/auth/set-password/{uid}/{token}/"
         return Response({'link': link}, status=status.HTTP_201_CREATED)
 
 
@@ -35,6 +47,9 @@ class SetPasswordAPIView(viewsets.GenericViewSet,
                          mixins.CreateModelMixin):
     serializer_class = CreatePasswordSerializer
     queryset = User.objects.all()
+
+    permission_classes = []
+    authentication_classes = []
 
     def list(self, request, *args, **kwargs):
         try:

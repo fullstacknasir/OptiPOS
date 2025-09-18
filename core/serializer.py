@@ -1,11 +1,26 @@
 from rest_framework import serializers
 
-from core.models import Store, Category, Brand, Product, Inventory, Adjustment
+from core.models import Store, Category, Brand, Product, StoreUser
 
 
 class StoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Store
+        fields = '__all__'
+        read_only_fields = ('id',)
+
+
+class StoreUserViewSerializer(serializers.ModelSerializer):
+    store = StoreSerializer(many=False)
+
+    class Meta:
+        model = StoreUser
+        fields = '__all__'
+        read_only_fields = ('id',)
+
+class StoreUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StoreUser
         fields = '__all__'
         read_only_fields = ('id',)
 
@@ -27,19 +42,5 @@ class BrandSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = '__all__'
-        read_only_fields = ('id',)
-
-
-class InventorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Inventory
-        fields = '__all__'
-        read_only_fields = ('id',)
-
-
-class AdjustmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Adjustment
         fields = '__all__'
         read_only_fields = ('id',)

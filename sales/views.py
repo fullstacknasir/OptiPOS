@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework.viewsets import ModelViewSet
 
-from sales.models import Customer, Sales, SalesItem, Transaction
+from sales.models import Customer, Sales, SalesLine, Payment
 from sales.serializer import CustomerSerializer, SalesSerializer, SalesItemSerializer, TransactionSerializer
 
 
@@ -17,10 +17,10 @@ class SalesAPIView(ModelViewSet):
 
 
 class SalesItemAPIView(ModelViewSet):
-    queryset = SalesItem.objects.all()
+    queryset = SalesLine.objects.all()
     serializer_class = SalesItemSerializer
 
 
 class TransactionAPIView(ModelViewSet):
-    queryset = Transaction.objects.all()
+    queryset = Payment.objects.all()
     serializer_class = TransactionSerializer
