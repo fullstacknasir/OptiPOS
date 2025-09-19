@@ -38,7 +38,7 @@ INSTALLED_APPS = [
 
     # 3rd Party Apps
     'rest_framework',
-    'drf_yasg',
+    'drf_spectacular',
     'rest_framework_simplejwt',
     'corsheaders',
 
@@ -137,13 +137,16 @@ AUTH_USER_MODEL = "user.User"
 LOGIN_REDIRECT_URL = '/docs'
 LOGOUT_REDIRECT_URL = '/docs'
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': [
         # 'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication'
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
-    ]
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'OptiPOS.custompagination.StandardResultsSetPagination',
+    'PAGE_SIZE': 5,
 }
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=30),  # Access token expiry time
@@ -155,3 +158,13 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:4200",
     "http://localhost:4200",
 ]
+
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Your Project API',
+    'DESCRIPTION': 'Your project description',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'TAGS_SORT': 'alpha',  # optional: sort tags alphabetically
+    'TAGS_BY_CLASS': True
+}
