@@ -14,6 +14,10 @@ echo "Installing Dependencies"
 sleep 1
 pip install -r requirements.txt
 
+echo "Upgrading pip"
+sleep 1
+pip install --upgrade pip
+
 # Run migrations
 echo "***************************\n*******Starting Migration****************\n*********************************"
 echo "migrating user"
