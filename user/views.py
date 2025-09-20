@@ -1,6 +1,7 @@
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, mixins, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -10,6 +11,7 @@ from user.serializer import UserSerializer, CreatePasswordSerializer
 
 
 # Create your views here.
+@extend_schema(tags=['User'])
 class CreateUserAPIView(viewsets.GenericViewSet,
                         mixins.ListModelMixin,
                         mixins.CreateModelMixin, ):
@@ -43,6 +45,7 @@ class CreateUserAPIView(viewsets.GenericViewSet,
         return Response({'link': link}, status=status.HTTP_201_CREATED)
 
 
+@extend_schema(tags=['Auth'])
 class SetPasswordAPIView(viewsets.GenericViewSet,
                          mixins.ListModelMixin,
                          mixins.CreateModelMixin):

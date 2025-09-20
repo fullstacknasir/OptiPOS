@@ -13,7 +13,8 @@ class StoreSerializer(serializers.ModelSerializer):
 
 class StoreUserViewSerializer(serializers.ModelSerializer):
     store = StoreSerializer(many=False)
-    user= UserSerializer(many=False)
+    user = UserSerializer(many=False)
+
     class Meta:
         model = StoreUser
         fields = '__all__'
@@ -35,6 +36,8 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class BrandSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField()
+
     class Meta:
         model = Brand
         fields = '__all__'

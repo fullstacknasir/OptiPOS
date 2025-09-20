@@ -1,6 +1,7 @@
 from django.shortcuts import redirect
 from django.views import View
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -43,7 +44,14 @@ class CategoryAPIView(ModelViewSet):
     serializer_class = CategorySerializer
     parser_classes = (MultiPartParser, FormParser)
 
-    @extend_schema(tags=['Category'])
+    @extend_schema(
+        tags=['Category'],
+        parameters=[
+            OpenApiParameter(name="search", type=OpenApiTypes.STR, location=OpenApiParameter.QUERY,
+                             description="Filter products by name", required=False),
+        ],
+        responses=ProductSerializer(many=True),
+    )
     @action(detail=True, methods=['get'], serializer_class=ProductSerializer)
     def product(self, request, pk=None):
         cat = self.get_object()
@@ -60,15 +68,59 @@ class CategoryAPIView(ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@extend_schema(tags=['Brand'])
+@extend_schema(tags=['Brand'],
+               request={'multipart/form-data': BrandSerializer})
 class BrandAPIView(ModelViewSet):
     queryset = Brand.objects.all()
     serializer_class = BrandSerializer
-    parser_classes = (MultiPartParser, FormParser)
+    parser_classes = [MultiPartParser, FormParser]
+
+    @extend_schema(
+        tags=['Brand'],
+        parameters=[
+            OpenApiParameter(name="search", type=OpenApiTypes.STR, location=OpenApiParameter.QUERY,
+                             description="Filter products by name", required=False),
+        ],
+        responses=ProductSerializer(many=True),
+    )
+    @action(detail=True, methods=['get'], serializer_class=ProductSerializer)
+    def product(self, request, pk=None):
+        cat = self.get_object()
+        queryset = cat.products.all()
+        search = request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(name__icontains=search)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = ProductSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = ProductSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=['Products'])
 class ProductAPIView(ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    parser_classes = (MultiPartParser, FormParser)
+    parser_classes = [MultiPartParser, FormParser]
+
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name="search", type=OpenApiTypes.STR, location=OpenApiParameter.QUERY,
+                             description="Filter products by name", required=False),
+        ],
+        responses=ProductSerializer(many=True),
+    )
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset();
+        if request.query_params.get('search'):
+            queryset = queryset.filter(name__icontains=request.query_params.get('search'))
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = ProductSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        return Response(ProductSerializer(queryset, many=True).data, status=status.HTTP_200_OK)

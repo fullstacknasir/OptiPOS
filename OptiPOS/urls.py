@@ -33,6 +33,7 @@ urlpatterns = [
     path('v1/api/', include('core.urls', namespace='core')),
     path('v1/api/', include('sales.urls', namespace='sales')),
     path('v1/api/', include('purchase.urls', namespace='purchase')),
+    path('v1/api/', include('inventory.urls', namespace='inventory')),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
 
     # Swagger UI
