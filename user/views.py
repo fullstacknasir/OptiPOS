@@ -20,7 +20,6 @@ class CreateUserAPIView(viewsets.GenericViewSet,
     pagination_class = None
 
     def get_permissions(self):
-        print(self.action)
         if self.action == 'list':
             return [IsAuthenticated()]
         return []

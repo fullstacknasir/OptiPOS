@@ -4,6 +4,8 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models, transaction
+from django.db.models import Q
+from django.core.exceptions import ValidationError
 
 from core.models import Product, Store
 
@@ -32,10 +34,27 @@ class Inventory(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = (("product", "store"),)
-        indexes = [models.Index(fields=["product", "store"])]
-        verbose_name_plural = 'Inventory'
-        verbose_name = 'Inventory'
+        verbose_name = "Inventory"
+        verbose_name_plural = "Inventory"
+        constraints = [
+            models.CheckConstraint(check=Q(quantity__gte=0), name="inventory_qty_nonnegative"),
+            models.CheckConstraint(check=Q(stock_alert__gte=0), name="inventory_stock_alert_nonnegative"),
+            models.CheckConstraint(check=Q(discount_rate__gte=0), name="inventory_discount_rate_nonnegative"),
+            # percentage → 0..100, flat → >=0
+            models.CheckConstraint(
+                name="inventory_discount_rate_bounds",
+                check=(
+                        Q(discount_method='percentage', discount_rate__gte=0, discount_rate__lte=100)
+                        | Q(discount_method='flat', discount_rate__gte=0)
+                ),
+            ),
+            models.UniqueConstraint(fields=["product", "store"], name="uniq_inventory_product_store"),
+        ]
+        indexes = [
+            models.Index(fields=["product", "store"]),
+            models.Index(fields=["updated_at"]),
+            models.Index(fields=["is_active"]),
+        ]
 
     def __str__(self):
         return self.product.name
@@ -79,11 +98,15 @@ class StockTransaction(models.Model):
                                         help_text="Inventory balance after this transaction (cached)")
 
     class Meta:
+        ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["product", "store", "created_at"]),
-            models.Index(fields=["reference_type", "reference_id"])
+            models.Index(fields=["reference_type", "reference_id"]),
         ]
-        ordering = ["-created_at"]
+        # Prevent duplicate external refs; multiple NULLs allowed in PostgreSQL
+        constraints = [
+            models.UniqueConstraint(fields=["reference_type", "reference_id"], name="uniq_stock_reference_pair"),
+        ]
 
     def __str__(self):
         return f"{self.product.sku} {self.quantity} ({self.get_movement_type_display()}) @ {self.store.name}"
@@ -98,6 +121,19 @@ class StockTransaction(models.Model):
             return qs.select_for_update().first()
         return qs.first()
 
+    @staticmethod
+    def _validate_movement_sign(movement_type, quantity):
+        """
+        Enforce clean sign conventions.
+        """
+        q = Decimal(quantity)
+        if q == 0:
+            raise ValidationError("Quantity (delta) cannot be zero.")
+        if movement_type in (MovementType.RECEIPT, MovementType.TRANSFER_IN) and q <= 0:
+            raise ValidationError("Quantity must be > 0 for RECEIPT/TRANSFER_IN.")
+        if movement_type in (MovementType.ISSUE, MovementType.TRANSFER_OUT) and q >= 0:
+            raise ValidationError("Quantity must be < 0 for ISSUE/TRANSFER_OUT.")
+
     @classmethod
     def create_transaction(cls, product, store, quantity, created_by, unit_cost=None,
                            movement_type=MovementType.RECEIPT, reference_type=None, reference_id=None, note=""):
@@ -105,27 +141,32 @@ class StockTransaction(models.Model):
         Atomic creation of a StockTransaction + update Inventory.quantity (cached).
         Positive quantity = increase stock, negative = decrease stock.
         """
+        qty = Decimal(quantity)
+        cls._validate_movement_sign(movement_type, qty)
+
         with transaction.atomic():
             inv = cls._get_inventory_row(product, store, for_update=True)
             if not inv:
-                inv = Inventory.objects.create(product=product, store=store, quantity=0)
-            # compute new balance
-            new_balance = (inv.quantity or 0) + quantity
+                inv = Inventory.objects.create(product=product, store=store, quantity=Decimal("0"))
+
+            new_balance = (inv.quantity or Decimal("0")) + qty
             if new_balance < 0:
-                raise ValueError("Insufficient stock to perform transaction (would go negative).")
+                raise ValidationError("Insufficient stock to perform transaction.")
+
             tx = cls.objects.create(
                 product=product,
                 store=store,
-                quantity=quantity,
+                quantity=qty,
                 unit_cost=unit_cost,
                 movement_type=movement_type,
                 reference_type=reference_type,
                 reference_id=reference_id,
                 created_by=created_by,
                 note=note,
-                balance_after=new_balance
+                balance_after=new_balance,
             )
-            # update cached inventory
+
             inv.quantity = new_balance
             inv.save(update_fields=["quantity", "updated_at"])
+
             return tx
