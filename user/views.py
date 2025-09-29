@@ -50,7 +50,6 @@ class SetPasswordAPIView(viewsets.GenericViewSet,
                          mixins.CreateModelMixin):
     serializer_class = CreatePasswordSerializer
     queryset = User.objects.all()
-
     permission_classes = []
     authentication_classes = []
     pagination_class = None

@@ -4,6 +4,8 @@ from inventory.models import Inventory, StockTransaction, MovementType
 
 ProductModel = Inventory._meta.get_field("product").remote_field.model
 StoreModel = Inventory._meta.get_field("store").remote_field.model
+
+
 class InventorySerializer(serializers.ModelSerializer):
     # readonly denorm fields
     product_name = serializers.CharField(source="product.name", read_only=True)
